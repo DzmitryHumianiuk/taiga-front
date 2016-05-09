@@ -1,0 +1,14 @@
+.velocity-forecasting-line {
+    align-items: center;
+    background: $tribe-primary;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    margin: .5rem 0;
+    padding: .25rem 0;
+    span {
+        @include font-size(small);
+        @include font-type(text);
+        color: $white;
+    }
+}

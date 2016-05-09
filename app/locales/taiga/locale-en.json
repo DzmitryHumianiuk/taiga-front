@@ -1235,6 +1235,7 @@
         "STATUS_NAME": "Status Name",
         "SORTABLE_FILTER_ERROR": "You can't drop on backlog when filters are open",
         "DOOMLINE": "Project Scope [Doomline]",
+        "VELOCITY_FORECASTING": "Candidates stories for the next sprint",
         "CHART": {
             "XAXIS_LABEL": "Sprints",
             "YAXIS_LABEL": "Points",
