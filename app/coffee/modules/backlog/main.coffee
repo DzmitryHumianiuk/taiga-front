@@ -544,14 +544,17 @@ module.controller("BacklogController", BacklogController)
 ## Backlog Directive
 #############################################################################
 
-BacklogDirective = ($repo, $rootscope, $translate, $rs) ->
+BacklogDirective = ($repo, $rootscope, $compile, $translate, $rs) ->
     ## Doom line Link
     doomLineTemplate = _.template("""
     <div class="doom-line"><span><%- text %></span></div>
     """)
 
     velocityForecastingTemplate = _.template("""
-    <div class="velocity-forecasting-line"><span><%- text %></span></div>
+    <div class="velocity-forecasting-line">
+        <tg-svg class="forecasting-sprint" svg-icon="icon-add" svg-title-translate="<%- text %>"></tg-svg>
+        <%- text %>
+    </div>
     """)
 
     linkDoomLine = ($scope, $el, $attrs, $ctrl) ->
@@ -597,7 +600,7 @@ BacklogDirective = ($repo, $rootscope, $translate, $rs) ->
 
         addVelocityForecasting = (element) ->
             text = $translate.instant("BACKLOG.VELOCITY_FORECASTING")
-            $(element).before(velocityForecastingTemplate({"text": text}))
+            $(element).before($compile(velocityForecastingTemplate({"text": text}))($scope))
 
         removeDoomlineDom = ->
             $el.find(".doom-line").remove()
@@ -806,7 +809,7 @@ BacklogDirective = ($repo, $rootscope, $translate, $rs) ->
     return {link: link}
 
 
-module.directive("tgBacklog", ["$tgRepo", "$rootScope", "$translate", "$tgResources", BacklogDirective])
+module.directive("tgBacklog", ["$tgRepo", "$rootScope", "$compile", "$translate", "$tgResources", BacklogDirective])
 
 #############################################################################
 ## User story points directive
