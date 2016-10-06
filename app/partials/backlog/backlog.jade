@@ -73,12 +73,34 @@ div.wrapper(tg-backlog, ng-controller="BacklogController as ctrl",
                     id="show-tags"
                     translate="BACKLOG.TAGS.SHOW"
                 )
+                a.trans-button.menu-button.velocity-forecasting-btn.ng-animate-disabled(
+                    ng-if="userstories.length && ctrl.displayVelocity"
+                    href=""
+                    title="{{'BACKLOG.FORECASTING.TITLE' | translate}}"
+                    translate="BACKLOG.FORECASTING.BACKLOG"
+                    ng-click="ctrl.toggleVelocityForecasting()"
+                )
+                a.trans-button.menu-button.velocity-forecasting-btn.ng-animate-disabled(
+                    ng-if="userstories.length && !ctrl.displayVelocity"
+                    href=""
+                    title="{{'BACKLOG.FORECASTING.BACKLOG' | translate}}"
+                    translate="BACKLOG.FORECASTING.TITLE"
+                    ng-click="ctrl.toggleVelocityForecasting()"
+                )
             include ../includes/components/addnewus
 
+        
         section.backlog-table(ng-class="{'hidden': !userstories.length}")
             include ../includes/modules/backlog-table
-
-        div.empty-large(ng-class="{'hidden': userstories === undefined || userstories.length}")
+            
+        .forecasting-add-sprint(
+            ng-if="ctrl.displayVelocity"
+            ng-click="ctrl.forecastToSprint()"
+        )
+            tg-svg(svg-icon="icon-add")
+            span(translate="BACKLOG.FORECASTING.NEW_SPRINT")
+            
+        .empty-large(ng-class="{'hidden': userstories === undefined || userstories.length}")
             img(
                 src="/#{v}/images/empty/empty_mex.png"
                 alt="{{'BACKLOG.EMPTY' | translate}}"
