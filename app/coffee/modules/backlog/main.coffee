@@ -121,8 +121,10 @@ class BacklogController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.F
             @confirm.notify("success")
             @analytics.trackEvent("userstory", "create", "bulk create userstory on backlog", 1)
 
-        @scope.$on "sprintform:create:success", =>
-            @.loadSprints()
+        @scope.$on "sprintform:create:success", (e, data, ussToMove) =>
+            @.loadSprints().then () =>
+                @scope.$broadcast("sprintform:create:success:callback", ussToMove)
+
             @.loadProjectStats()
             @confirm.notify("success")
             @analytics.trackEvent("sprint", "create", "create sprint on backlog", 1)
@@ -188,15 +190,10 @@ class BacklogController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.F
             @scope.visibleUserStories = _.map @scope.userstories, (it) ->
                 return it.ref
         else
-            @scope.visibleUserStories = @.forecastedStories
+            @scope.visibleUserStories = _.map @.forecastedStories, (it) ->
+                return it.ref
         scopeDefer @scope, =>
             @scope.$broadcast("userstories:loaded")
-
-    forecastToSprint: ->
-        console.log @scope.visibleUserStories + 'to Sprint'
-        @.addNewSprint()
-        @scope.$on "sprintform:create:success", =>
-            @.moveUssToSprint(@scope.visibleUserStories, @scope.sprints[0])
 
     loadProjectStats: ->
         return @rs.projects.stats(@scope.projectId).then (stats) =>
@@ -334,7 +331,7 @@ class BacklogController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.F
         for us in @scope.userstories
             current_sum += us.total_points
             backlog_points_sum += us.total_points
-            @forecastedStories.push(us.ref)
+            @forecastedStories.push(us)
 
             if stats.speed > 0 && backlog_points_sum > stats.speed
                 break
@@ -577,7 +574,7 @@ module.controller("BacklogController", BacklogController)
 ## Backlog Directive
 #############################################################################
 
-BacklogDirective = ($repo, $rootscope, $translate) ->
+BacklogDirective = ($repo, $rootscope, $translate, $rs) ->
     ## Doom line Link
     doomLineTemplate = _.template("""
     <div class="doom-line"><span><%- text %></span></div>
@@ -649,9 +646,11 @@ BacklogDirective = ($repo, $rootscope, $translate) ->
             # Update the total of points
             sprint.total_points += totalExtraPoints
 
-            $repo.saveAll(selectedUss).then ->
+            $rs.userstories.bulkUpdateMilestone($scope.project.id, $scope.sprints[0].id, selectedUss).then =>
                 $ctrl.loadSprints()
                 $ctrl.loadProjectStats()
+                $ctrl.toggleVelocityForecasting()
+                $ctrl.calculateForecasting()
 
             $el.find(".move-to-sprint").hide()
 
@@ -660,6 +659,9 @@ BacklogDirective = ($repo, $rootscope, $translate) ->
 
         moveToLatestSprint = (selectedUss) ->
             moveUssToSprint(selectedUss, $scope.sprints[0])
+
+        $scope.$on "sprintform:create:success:callback", (e, ussToMove) ->
+            _.partial(moveToCurrentSprint, ussToMove)()
 
         shiftPressed = false
         lastChecked = null
@@ -720,6 +722,22 @@ BacklogDirective = ($repo, $rootscope, $translate) ->
             $ctrl.toggleShowTags()
 
             showHideTags($ctrl)
+
+        $el.on "click", ".forecasting-add-sprint", (event) ->
+            ussToMoveList = $ctrl.forecastedStories
+            if $scope.currentSprint
+                ussToMove = _.map ussToMoveList, (us, index) ->
+                    us.milestone = $scope.currentSprint.id
+                    us.order = index
+                    return us
+
+                $scope.$apply(_.partial(moveToCurrentSprint, ussToMove))
+            else
+                ussToMove = _.map ussToMoveList, (us, index) ->
+                    us.order = index
+                    return us
+
+                $rootscope.$broadcast("sprintform:create", $scope.projectId, ussToMove)
 
     showHideTags = ($ctrl) ->
         elm = angular.element("#show-tags")
@@ -795,7 +813,7 @@ BacklogDirective = ($repo, $rootscope, $translate) ->
     return {link: link}
 
 
-module.directive("tgBacklog", ["$tgRepo", "$rootScope", "$translate", BacklogDirective])
+module.directive("tgBacklog", ["$tgRepo", "$rootScope", "$translate", "$tgResources", BacklogDirective])
 
 #############################################################################
 ## User story points directive

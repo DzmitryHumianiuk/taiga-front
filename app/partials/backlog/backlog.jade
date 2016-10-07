@@ -93,10 +93,7 @@ div.wrapper(tg-backlog, ng-controller="BacklogController as ctrl",
         section.backlog-table(ng-class="{'hidden': !userstories.length}")
             include ../includes/modules/backlog-table
             
-        .forecasting-add-sprint(
-            ng-if="ctrl.displayVelocity"
-            ng-click="ctrl.forecastToSprint()"
-        )
+        .forecasting-add-sprint(ng-if="ctrl.displayVelocity")
             tg-svg(svg-icon="icon-add")
             span(translate="BACKLOG.FORECASTING.NEW_SPRINT")
             
